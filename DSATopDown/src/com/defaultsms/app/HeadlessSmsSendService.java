@@ -1,4 +1,4 @@
-package com.example.smsmmstest;
+package com.defaultsms.app;
 
 import android.app.Service;
 import android.content.Intent;

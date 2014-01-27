@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.example.smsmmstest;
+package com.defaultsms.app;
 
 import android.util.Log;
 

@@ -1,8 +1,10 @@
-package com.example.smsmmstest;
+package com.defaultsms.app;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.TimeZone;
 
 import com.androidquery.AQuery;
@@ -26,7 +28,7 @@ import android.view.ViewGroup;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.example.smsmmstest.R;
+import com.defaultsms.app.R;
 //import android.provider.;
 public class MainActivity extends Activity {
 
@@ -45,6 +47,19 @@ public class MainActivity extends Activity {
 	String[] PRJ_SIMPLE={
 			"_id","date","message_count","recipient_ids","snippet","snippet_cs","read","type","error","has_attachment",			
 	};
+	private static final int _ID=0;
+	private static final int DATE=1;
+	private static final int MESSAGE_COUNT=2;
+	private static final int RECIPIENT_IDS=3;
+	private static final int SNIPPET=4;
+	private static final int SNIPPET_CS=5;
+	private static final int READ=6;
+	private static final int TYPE=7;
+	private static final int ERROR=8;
+	private static final int HAS_ATTACHMENT=9;
+	
+    private static Uri sAllCanonical = Uri.parse("content://mms-sms/canonical-addresses");
+    private final Map<Long, String>mCache = new HashMap<Long, String>();
 	//"msg_box"
 	//"person",
 	//"subject",
@@ -130,22 +145,23 @@ public class MainActivity extends Activity {
 				View v=super.getView(position, convertView, parent);
 				Cursor c=getCursor();
 				c.moveToPosition(position);
-				//long l=c.getLong(2);
 				long l=c.getLong(1);
-				//Calendar cal=Calendar.getInstance(TimeZone.getDefault());
-				//cal.setTimeInMillis(l);
 				SimpleDateFormat sdf = new SimpleDateFormat("yyyy.MM.dd");
 				Date date=new Date(l);
 				String s=sdf.format(date);
 				TextView tv=(TextView)v.findViewById(R.id.date);
 				tv.setText(s);
 
+				tv=(TextView)v.findViewById(R.id.from);
+				l=c.getLong(RECIPIENT_IDS);
+				s=mCache.get(l);
+				tv.setText(s);
 				return v;
 			}
 		};
 		
 		mListView.setAdapter(mAdapter);
-		
+		makeCanonicalAddr();
 //		String defaultSmsApp = Telephony.Sms.getDefaultSmsPackage(this);
 //		Context context=this;
 //		Intent intent = new Intent(Sms.Intents.ACTION_CHANGE_DEFAULT);
@@ -155,6 +171,25 @@ public class MainActivity extends Activity {
 //		intent.putExtra(Sms.Intents.EXTRA_PACKAGE_NAME, context.getPackageName());
 //		startActivity(intent);
 		
+		
+		
+	}
+	
+	private void makeCanonicalAddr(){
+		Cursor c=getContentResolver().query(sAllCanonical, null, null, null, null);
+		if(c!=null && c.getCount()>0){
+			c.moveToFirst();
+	       try {
+	                while (c.moveToNext()) {
+	                    // TODO: don't hardcode the column indices
+	                    long id = c.getLong(0);
+	                    String number = c.getString(1);
+	                    mCache.put(id, number);
+	                }
+	        } finally {
+	            c.close();
+	        }			
+		}
 	}
 
 	@Override
