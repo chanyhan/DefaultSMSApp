@@ -24,7 +24,8 @@ import android.provider.Telephony.Mms;
 import android.provider.Telephony.Mms.Addr;
 import android.text.TextUtils;
 
-import com.android.i18n.phonenumbers.PhoneNumberUtil;
+//import com.android.i18n.phonenumbers.PhoneNumberUtil;
+import com.google.i18n.phonenumbers.PhoneNumberUtil;
 import com.android.mms.MmsApp;
 import com.android.mms.R;
 import com.google.android.mms.pdu.EncodedStringValue;

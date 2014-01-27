@@ -154,9 +154,9 @@ public class SmsReceiverService extends Service {
                 return "SmsManager.RESULT_ERROR_NULL_PDU";
             case SmsManager.RESULT_ERROR_NO_SERVICE:
                 return "SmsManager.RESULT_ERROR_NO_SERVICE";
-            case SmsManager.RESULT_ERROR_LIMIT_EXCEEDED:
+            case 5: // hard coded for hidden //case SmsManager.RESULT_ERROR_LIMIT_EXCEEDED:
                 return "SmsManager.RESULT_ERROR_LIMIT_EXCEEDED";
-            case SmsManager.RESULT_ERROR_FDN_CHECK_FAILURE:
+            case 6:// hard coded for hidden case SmsManager.RESULT_ERROR_FDN_CHECK_FAILURE:
                 return "SmsManager.RESULT_ERROR_FDN_CHECK_FAILURE";
             default:
                 return "Unknown error code";
@@ -317,7 +317,7 @@ public class SmsReceiverService extends Service {
             if (LogTag.DEBUG_SEND || Log.isLoggable(LogTag.TRANSACTION, Log.VERBOSE)) {
                 Log.v(TAG, "handleSmsSent move message to sent folder uri: " + uri);
             }
-            if (!Sms.moveMessageToFolder(this, uri, Sms.MESSAGE_TYPE_SENT, error)) {
+            if (!moveMessageToFolder(this, uri, Sms.MESSAGE_TYPE_SENT, error)) {
                 Log.e(TAG, "handleSmsSent: failed to move message " + uri + " to sent folder");
             }
             if (sendNextMsg) {
@@ -336,14 +336,14 @@ public class SmsReceiverService extends Service {
             // queued up messages.
             registerForServiceStateChanges();
             // We couldn't send the message, put in the queue to retry later.
-            Sms.moveMessageToFolder(this, uri, Sms.MESSAGE_TYPE_QUEUED, error);
+            moveMessageToFolder(this, uri, Sms.MESSAGE_TYPE_QUEUED, error);
             mToastHandler.post(new Runnable() {
                 public void run() {
                     Toast.makeText(SmsReceiverService.this, getString(R.string.message_queued),
                             Toast.LENGTH_SHORT).show();
                 }
             });
-        } else if (mResultCode == SmsManager.RESULT_ERROR_FDN_CHECK_FAILURE) {
+        } else if (mResultCode == 6){//hard coded for hidden //SmsManager.RESULT_ERROR_FDN_CHECK_FAILURE) {
             messageFailedToSend(uri, mResultCode);
             mToastHandler.post(new Runnable() {
                 public void run() {
@@ -358,12 +358,58 @@ public class SmsReceiverService extends Service {
             }
         }
     }
+    
+    /**
+     * hidden method
+     * @param context
+     * @param uri
+     * @param folder
+     * @param error
+     * @return
+     */
+    public static boolean moveMessageToFolder(Context context,
+            Uri uri, int folder, int error) {
+        if (uri == null) {
+            return false;
+        }
+
+        boolean markAsUnread = false;
+        boolean markAsRead = false;
+        switch(folder) {
+        case Sms.MESSAGE_TYPE_INBOX:
+        case Sms.MESSAGE_TYPE_DRAFT:
+            break;
+        case Sms.MESSAGE_TYPE_OUTBOX:
+        case Sms.MESSAGE_TYPE_SENT:
+            markAsRead = true;
+            break;
+        case Sms.MESSAGE_TYPE_FAILED:
+        case Sms.MESSAGE_TYPE_QUEUED:
+            markAsUnread = true;
+            break;
+        default:
+            return false;
+        }
+
+        ContentValues values = new ContentValues(3);
+
+        values.put(Sms.TYPE, folder);
+        if (markAsUnread) {
+            values.put(Sms.READ, 0);
+        } else if (markAsRead) {
+            values.put(Sms.READ, 1);
+        }
+        values.put(Sms.ERROR_CODE, error);
+
+        return 1 == SqliteWrapper.update(context, context.getContentResolver(),
+                        uri, values, null, null);
+    }    
 
     private void messageFailedToSend(Uri uri, int error) {
         if (Log.isLoggable(LogTag.TRANSACTION, Log.VERBOSE) || LogTag.DEBUG_SEND) {
             Log.v(TAG, "messageFailedToSend msg failed uri: " + uri + " error: " + error);
         }
-        Sms.moveMessageToFolder(this, uri, Sms.MESSAGE_TYPE_FAILED, error);
+        moveMessageToFolder(this, uri, Sms.MESSAGE_TYPE_FAILED, error);
         MessagingNotification.notifySendFailed(getApplicationContext(), true);
     }
 
