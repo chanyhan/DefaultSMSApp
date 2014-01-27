@@ -79,7 +79,11 @@ public class MainActivity extends Activity {
 		}
 		*/
 		String[] s=c.getColumnNames();
-		AQUtility.debug("count="+c.getCount()+"column="+s.toString());
+		String printL="";
+		for(String t:s){
+			printL+=(t+",");
+		}
+		AQUtility.debug("printL="+printL);
 		for(int i=0;i<c.getCount();i++){
 			c.moveToPosition(i);
 			String print="";
@@ -115,11 +119,11 @@ public class MainActivity extends Activity {
 		LogUtil.d("Projection:"+c.getColumnNames().toString());
 		
 		mListView=(ListView)findViewById(R.id.listview);
-		mAdapter=new SimpleCursorAdapter(this, R.layout.listview_item,
+		mAdapter=new SimpleCursorAdapter(this, R.layout.conversation_list_item,
 				c,
 				//new String[]{"date","address"},
-				new String[]{"date","message_count", "recipient_ids"},
-				new int[]{R.id.text1, R.id.text2, R.id.text3},//
+				new String[]{"date", "recipient_ids", "snippet"},//"message_count",
+				new int[]{R.id.date,  R.id.from, R.id.subject},//R.id.text2,
 				SimpleCursorAdapter.FLAG_REGISTER_CONTENT_OBSERVER){
 			@Override
 			public View getView(int position, View convertView, ViewGroup parent){
@@ -133,7 +137,7 @@ public class MainActivity extends Activity {
 				SimpleDateFormat sdf = new SimpleDateFormat("yyyy.MM.dd");
 				Date date=new Date(l);
 				String s=sdf.format(date);
-				TextView tv=(TextView)v.findViewById(R.id.text1);
+				TextView tv=(TextView)v.findViewById(R.id.date);
 				tv.setText(s);
 
 				return v;
