@@ -48,15 +48,9 @@
                 <data android:mimeType="application/vnd.wap.mms-message" />
             </intent-filter>
         </receiver>
-        
         <activity
-            android:name="com.defaultsms.app.activity.ConversationList"
+            android:name="com.defaultsms.app.activity.ComposeMessage"
             android:label="@string/app_name" >
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />                
                 <action android:name="android.intent.action.SENDTO" />
@@ -67,6 +61,14 @@
                 <data android:scheme="mms" />
                 <data android:scheme="mmsto" />
             </intent-filter>            
+        </activity>        
+        <activity
+            android:name="com.defaultsms.app.activity.ConversationList"
+            android:label="@string/app_name" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
         </activity>
         <service android:name="com.defaultsms.app.HeadlessSmsSendService"
                  android:permission="android.permission.SEND_RESPOND_VIA_MESSAGE"

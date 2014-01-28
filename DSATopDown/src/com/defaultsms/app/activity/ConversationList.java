@@ -16,6 +16,7 @@ import android.provider.Telephony;
 import android.provider.Telephony.Sms;
 import android.provider.Telephony.Threads;
 import android.app.Activity;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -26,6 +27,8 @@ import android.support.v4.widget.SimpleCursorAdapter;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
 import android.widget.QuickContactBadge;
 import android.widget.TextView;
@@ -109,18 +112,24 @@ public class ConversationList extends Activity {
 					backgroundId = R.drawable.conversation_item_background_read;
 				}
 				v.setBackgroundResource(backgroundId);
+				v.setTag(c.getLong(_ID));
 				return v;
 			}
-			
-		    private void updateBackground() {
-		        
-		        /*if (mConversation.isChecked()) {
-		            backgroundId = R.drawable.list_selected_holo_light;
-		        } else*/
-		    }			
 		};
 		
 		mListView.setAdapter(mAdapter);
+		mListView.setOnItemClickListener(new OnItemClickListener(){
+
+			@Override
+			public void onItemClick(AdapterView<?> parent, View view,
+					int position, long id) {
+				Intent intent=new Intent(ConversationList.this, ComposeMessage.class);
+				long threadId=(Long)view.getTag();
+				intent.setData(ContentUris.withAppendedId(Threads.CONTENT_URI, threadId));
+				startActivity(intent);
+			}
+			
+		});
 		makeCanonicalAddr();
 //		String defaultSmsApp = Telephony.Sms.getDefaultSmsPackage(this);
 //		Context context=this;
