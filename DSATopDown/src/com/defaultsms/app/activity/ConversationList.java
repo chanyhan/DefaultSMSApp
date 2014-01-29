@@ -1,5 +1,6 @@
 package com.defaultsms.app.activity;
 
+import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -12,9 +13,14 @@ import com.androidquery.util.AQUtility;
 
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.BaseColumns;
 import android.provider.Telephony;
+import android.provider.Telephony.Mms;
+import android.provider.Telephony.MmsSms;
 import android.provider.Telephony.Sms;
 import android.provider.Telephony.Threads;
+import android.provider.Telephony.MmsSms.PendingMessages;
+import android.provider.Telephony.Sms.Conversations;
 import android.app.Activity;
 import android.content.ContentUris;
 import android.content.Context;
@@ -24,6 +30,8 @@ import android.database.MatrixCursor;
 import android.database.MatrixCursor.RowBuilder;
 import android.graphics.drawable.Drawable;
 import android.support.v4.widget.SimpleCursorAdapter;
+import android.text.TextUtils;
+import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
@@ -38,6 +46,8 @@ import com.defaultsms.app.R;
 import com.defaultsms.app.R.id;
 import com.defaultsms.app.R.layout;
 import com.defaultsms.app.R.menu;
+import com.defaultsms.app.mms.pdu.CharacterSets;
+import com.defaultsms.app.mms.pdu.EncodedStringValue;
 //import android.provider.;
 public class ConversationList extends Activity {
 
@@ -113,6 +123,10 @@ public class ConversationList extends Activity {
 				}
 				v.setBackgroundResource(backgroundId);
 				v.setTag(c.getLong(_ID));
+				
+				s=extractEncStrFromCursor(c,SNIPPET, SNIPPET_CS);
+				tv=(TextView)v.findViewById(R.id.subject);
+				tv.setText(s);
 				return v;
 			}
 		};
@@ -131,6 +145,8 @@ public class ConversationList extends Activity {
 			
 		});
 		makeCanonicalAddr();
+		
+		justTest();
 //		String defaultSmsApp = Telephony.Sms.getDefaultSmsPackage(this);
 //		Context context=this;
 //		Intent intent = new Intent(Sms.Intents.ACTION_CHANGE_DEFAULT);
@@ -141,7 +157,103 @@ public class ConversationList extends Activity {
 //		startActivity(intent);
 		
 	}
-	
+    
+    public static byte[] getBytes(String data) {
+        try {
+            return data.getBytes(CharacterSets.MIMENAME_ISO_8859_1);
+        } catch (UnsupportedEncodingException e) {
+            // Impossible to reach here!
+            return new byte[0];
+        }
+    }
+    
+    public static String extractEncStrFromCursor(Cursor cursor,  int columnRawBytes, int columnCharset) {
+        String rawBytes = cursor.getString(columnRawBytes);
+        int charset = cursor.getInt(columnCharset);
+        if (TextUtils.isEmpty(rawBytes)) {
+            return "";
+        } else if (charset == CharacterSets.ANY_CHARSET) {
+            return rawBytes;
+        } else {
+            return new EncodedStringValue(charset, getBytes(rawBytes)).getString();
+        }
+    }    
+    
+    static final String[] PROJECTION = new String[] {
+        // TODO: should move this symbol into com.android.mms.telephony.Telephony.
+        MmsSms.TYPE_DISCRIMINATOR_COLUMN,
+        BaseColumns._ID,
+        Conversations.THREAD_ID,
+        // For SMS
+        Sms.ADDRESS,
+        Sms.BODY,
+        Sms.DATE,
+        Sms.DATE_SENT,
+        Sms.READ,
+        Sms.TYPE,
+        Sms.STATUS,
+        
+        Sms.LOCKED,
+        Sms.ERROR_CODE,
+        // For MMS
+        Mms.SUBJECT,
+        Mms.SUBJECT_CHARSET,
+        Mms.DATE,
+        Mms.DATE_SENT,
+        Mms.READ,
+        Mms.MESSAGE_TYPE,
+        Mms.MESSAGE_BOX,
+        Mms.DELIVERY_REPORT,
+        
+        Mms.READ_REPORT,
+        //PendingMessages.ERROR_TYPE,
+        Mms.LOCKED,
+        Mms.STATUS,
+        Mms.TEXT_ONLY
+    };    
+    
+    
+	private void justTest(){
+		Uri uri=Uri.parse("content://mms-sms/complete-conversations");//ContentUris.withAppendedId(Threads.CONTENT_URI, 0);
+		LogUtil.d("uri= "+uri.toString());
+		Cursor c=getContentResolver().query(uri, PROJECTION, null, null, null);
+		String[] column=c.getColumnNames();
+		String col="";
+		for(String s:column){
+			col+=(s+",");
+		}
+		//LogUtil.d("col= "+col);
+		for(int i=0;i<c.getCount();i++){
+			c.moveToPosition(i);
+			String print="";
+			int count=c.getColumnCount();
+			for(int j=0;j<count;j++){
+				int type=c.getType(j);
+				Object o;
+				
+				switch(type){
+				case Cursor.FIELD_TYPE_STRING:
+					o=c.getString(j);
+					o=j+":"+"s:"+o+",\t";
+					break;
+				case Cursor.FIELD_TYPE_FLOAT:
+					o=c.getFloat(j);
+					o=j+":"+"f:"+o+",\t";
+					break;
+				case Cursor.FIELD_TYPE_INTEGER:
+					o=c.getInt(j);
+					o=j+":"+"i:"+o+",\t";
+					break;
+				default:
+				case Cursor.FIELD_TYPE_NULL:
+					o="";
+					break;
+				}
+				print+=o;
+			}
+			LogUtil.d(print);
+		}
+	}
 	private void makeCanonicalAddr(){
 		Cursor c=getContentResolver().query(sAllCanonical, null, null, null, null);
 		if(c!=null && c.getCount()>0){

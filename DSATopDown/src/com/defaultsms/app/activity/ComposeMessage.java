@@ -178,7 +178,7 @@ public class ComposeMessage extends Activity{
     	};
     	
     	mListView.setAdapter(mAdapter);
-    	
+    	updateTitle();
     }
    
     
@@ -186,6 +186,12 @@ public class ComposeMessage extends Activity{
         String title = null;
         String subTitle = null;
 
+        for(int i=0;i<mCursor.getCount();i++){
+        	mCursor.moveToPosition(i);
+        	LogUtil.d("position="+i+", string="+mCursor.getString(COLUMN_SMS_ADDRESS));
+        }
+        
+        subTitle=mCursor.getString(COLUMN_SMS_ADDRESS);
 
         ActionBar actionBar = getActionBar();
         actionBar.setTitle(title);
