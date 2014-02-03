@@ -6,27 +6,45 @@ package com.defaultsms.app;
 import android.util.Log;
 
 /**
- * Util for logging
- * @author wonjai
+ * Log Util
+ * @author chanyhan
  *
  */
 public class LogUtil {
+	private static boolean DEBUG=true;
 	
-	private LogUtil() {
-		
+	public static void v(String tag,String msg) {
+		if(DEBUG)
+			Log.v(tag, msg);
+	}
+	public static void d(String tag,String msg) {
+		if(DEBUG)
+			Log.d(tag, msg);
+	}
+	public static void e(String tag,String msg) {
+		if(DEBUG)
+			Log.e(tag, msg);
+	}
+	public static void w(String tag,String msg) {
+		if(DEBUG)
+			Log.w(tag, msg);
 	}
 	
 	public static void v(String msg) {
-		Log.v(getTag(), msg);
+		if(DEBUG)
+			Log.v(getTag(), msg);
 	}
 	public static void d(String msg) {
-		Log.d(getTag(), msg);
+		if(DEBUG)
+			Log.d(getTag(), msg);
 	}
 	public static void e(String msg) {
-		Log.e(getTag(), msg);
+		if(DEBUG)
+			Log.e(getTag(), msg);
 	}
 	public static void w(String msg) {
-		Log.w(getTag(), msg);
+		if(DEBUG)
+			Log.w(getTag(), msg);
 	}	
 	
 	private static String getTag(){

@@ -53,7 +53,7 @@ public class ConversationList extends Activity {
 
 	ListView mListView;
 	SimpleCursorAdapter mAdapter;
-	
+	Cursor	mCursor;
 	String[] PRJ_SIMPLE={
 			"_id","date","message_count","recipient_ids","snippet","snippet_cs","read","type","error","has_attachment",			
 	};
@@ -81,13 +81,13 @@ public class ConversationList extends Activity {
 		
 		Uri uri=Threads.CONTENT_URI;
 		uri=uri.buildUpon().appendQueryParameter("simple", "true").build();
-		Cursor c=getContentResolver().query(uri, null, null, null, "date DESC");
+		mCursor=getContentResolver().query(uri, null, null, null, "date DESC");
 
-		forDebugging(c);
+		forDebugging(mCursor);
 		
 		mListView=(ListView)findViewById(R.id.listview);
 		mAdapter=new SimpleCursorAdapter(this, R.layout.conversation_list_item,
-				c,
+				mCursor,
 				new String[]{"date", "recipient_ids", "snippet"},
 				new int[]{R.id.date,  R.id.from, R.id.subject},
 				SimpleCursorAdapter.FLAG_REGISTER_CONTENT_OBSERVER){
@@ -137,16 +137,19 @@ public class ConversationList extends Activity {
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view,
 					int position, long id) {
+				mCursor.moveToPosition(position);
 				Intent intent=new Intent(ConversationList.this, ComposeMessage.class);
 				long threadId=(Long)view.getTag();
+				long recipient_ids=mCursor.getLong(RECIPIENT_IDS);
 				intent.setData(ContentUris.withAppendedId(Threads.CONTENT_URI, threadId));
+				intent.putExtra(Sms.ADDRESS, mCache.get(recipient_ids));
 				startActivity(intent);
 			}
 			
 		});
 		makeCanonicalAddr();
 		
-		justTest();
+		//justTest();
 //		String defaultSmsApp = Telephony.Sms.getDefaultSmsPackage(this);
 //		Context context=this;
 //		Intent intent = new Intent(Sms.Intents.ACTION_CHANGE_DEFAULT);
@@ -257,20 +260,14 @@ public class ConversationList extends Activity {
 	private void makeCanonicalAddr(){
 		Cursor c=getContentResolver().query(sAllCanonical, null, null, null, null);
 		if(c!=null && c.getCount()>0){
-			String[] s=c.getColumnNames();
-			String printL="";
-			for(String t:s){
-				printL+=(t+",");
-			}
-			AQUtility.debug("printL="+printL);			
 			c.moveToFirst();
 	       try {
-	                while (c.moveToNext()) {
-	                    // TODO: don't hardcode the column indices
-	                    long id = c.getLong(0);
-	                    String number = c.getString(1);
-	                    mCache.put(id, number);
-	                }
+                while (c.moveToNext()) {
+                    // TODO: don't hardcode the column indices
+                    long id = c.getLong(0);
+                    String number = c.getString(1);
+                    mCache.put(id, number);
+                }
 	        } finally {
 	            c.close();
 	        }			

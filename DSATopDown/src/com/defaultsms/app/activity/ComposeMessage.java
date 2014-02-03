@@ -1,7 +1,7 @@
 package com.defaultsms.app.activity;
 
-//import com.android.mms.MmsApp;
-//import com.android.mms.data.ContactList;
+import java.util.Locale;
+
 import com.defaultsms.app.LogUtil;
 import com.defaultsms.app.R;
 
@@ -11,26 +11,30 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.BaseColumns;
+import android.provider.ContactsContract.Contacts;
+import android.provider.ContactsContract.CommonDataKinds.Phone;
+import android.provider.ContactsContract.Data;
 import android.provider.Telephony.Mms;
 import android.provider.Telephony.MmsSms;
 import android.provider.Telephony.Sms;
 import android.provider.Telephony.TextBasedSmsColumns;
+import android.provider.Telephony.Threads;
 import android.provider.Telephony.MmsSms.PendingMessages;
 import android.provider.Telephony.Sms.Conversations;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.telephony.PhoneNumberUtils;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-public class ComposeMessage extends Activity{
+public class ComposeMessage extends Activity implements OnClickListener{
 
+	private static Uri sAllCanonical = Uri.parse("content://mms-sms/canonical-addresses");
+	
     static final String[] PROJECTION = new String[] {
         // TODO: should move this symbol into com.android.mms.telephony.Telephony.
         MmsSms.TYPE_DISCRIMINATOR_COLUMN,
@@ -95,6 +99,8 @@ public class ComposeMessage extends Activity{
     public static final int INCOMING_ITEM_TYPE_MMS = 2;
     public static final int OUTGOING_ITEM_TYPE_MMS = 3;
     
+    long	mThreadId=-1;
+    private String	mNumber;
     Cursor mCursor=null;
     ListView	mListView;
     SimpleCursorAdapter mAdapter;
@@ -103,12 +109,24 @@ public class ComposeMessage extends Activity{
     	super.onCreate(savedInstanceState);
     	setContentView(R.layout.compose_message);
     	
+    	mNumber=getIntent().getStringExtra(Sms.ADDRESS);
+    	if(mNumber!=null){
+    		LogUtil.d("Number="+mNumber);
+    	}
     	Uri uri=getIntent().getData();
     	if(uri!=null){
+    		// show previous conversation
     		mCursor=getContentResolver().query(uri, PROJECTION, null, null, null);
     		if(mCursor!=null){
-    			LogUtil.d("ThreadId="+uri.getLastPathSegment()+", mCursor="+mCursor.getCount());
+    			try{
+    			mThreadId=Long.parseLong(uri.getLastPathSegment());
+    			}catch(Exception e){
+    				e.printStackTrace();
+    			}
+    			LogUtil.d("ThreadId="+mThreadId+", mCursor="+mCursor.getCount());
     		}
+    	}else{
+    		//create new
     	}
     	
     	mListView=(ListView)findViewById(R.id.listview);
@@ -191,11 +209,94 @@ public class ComposeMessage extends Activity{
         	LogUtil.d("position="+i+", string="+mCursor.getString(COLUMN_SMS_ADDRESS));
         }
         
+        // Update with name
+        title=loadNameFromNumber(mNumber);
+        
         subTitle=mCursor.getString(COLUMN_SMS_ADDRESS);
 
         ActionBar actionBar = getActionBar();
         actionBar.setTitle(title);
         actionBar.setSubtitle(subTitle);
-    }    
+        
+        actionBar.setHomeButtonEnabled(true);
+    }
+    
+    private static final String[] CALLER_ID_PROJECTION = new String[] {
+        Phone._ID,                      // 0
+        Phone.NUMBER,                   // 1
+        Phone.LABEL,                    // 2
+        Phone.DISPLAY_NAME,             // 3
+        Phone.CONTACT_ID,               // 4
+        Phone.CONTACT_PRESENCE,         // 5
+        Phone.CONTACT_STATUS,           // 6
+        Phone.NORMALIZED_NUMBER,        // 7
+        //Contacts.SEND_TO_VOICEMAIL      // 8
+    };
+    private static final int PHONE_ID_COLUMN = 0;
+    private static final int PHONE_NUMBER_COLUMN = 1;
+    private static final int PHONE_LABEL_COLUMN = 2;
+    private static final int CONTACT_NAME_COLUMN = 3;
+    private static final int CONTACT_ID_COLUMN = 4;
+    private static final int CONTACT_PRESENCE_COLUMN = 5;
+    private static final int CONTACT_STATUS_COLUMN = 6;
+    private static final int PHONE_NORMALIZED_NUMBER = 7;
+    //private static final int SEND_TO_VOICEMAIL = 8;    
+    
+    private static final String CALLER_ID_SELECTION_WITHOUT_E164 =  " Data._ID IN "
+            + " (SELECT DISTINCT lookup.data_id "
+            + " FROM "
+                + " (SELECT data_id, normalized_number, length(normalized_number) as len "
+                + " FROM phone_lookup "
+                + " WHERE min_match = ?) AS lookup "
+            + " WHERE "
+                + " (lookup.len <= ? AND "
+                    + " substr(?, ? - lookup.len + 1) = lookup.normalized_number))";
+    
+    private String loadNameFromNumber(String number) {
+    	if(TextUtils.isEmpty(number)){
+    		return "";
+    	}
+
+    	
+        String normalizedNumber = normalizeNumber(number);
+        String minMatch = PhoneNumberUtils.toCallerIDMinMatch(normalizedNumber);
+        if (!TextUtils.isEmpty(normalizedNumber) && !TextUtils.isEmpty(minMatch)) {
+            String numberLen = String.valueOf(normalizedNumber.length());
+            String selection;
+            String[] args;
+            selection = CALLER_ID_SELECTION_WITHOUT_E164;
+            args = new String[] {minMatch, numberLen, normalizedNumber, numberLen};
+            Cursor cursor = getContentResolver().query(Data.CONTENT_URI, CALLER_ID_PROJECTION, selection, args, null);
+            if(cursor!=null && cursor.getCount()>0){
+            	cursor.moveToFirst();
+            	return cursor.getString(CONTACT_NAME_COLUMN);
+            }
+        }
+        return "";
+    }
+    
+    public static String normalizeNumber(String phoneNumber) {
+        StringBuilder sb = new StringBuilder();
+        int len = phoneNumber.length();
+        for (int i = 0; i < len; i++) {
+            char c = phoneNumber.charAt(i);
+            // Character.digit() supports ASCII and Unicode digits (fullwidth, Arabic-Indic, etc.)
+            int digit = Character.digit(c, 10);
+            if (digit != -1) {
+                sb.append(digit);
+            } else if (i == 0 && c == '+') {
+                sb.append(c);
+            } else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+                return normalizeNumber(PhoneNumberUtils.convertKeypadLettersToDigits(phoneNumber));
+            }
+        }
+        return sb.toString();
+    }
+    
+	@Override
+	public void onClick(View v) {
+		// TODO Auto-generated method stub
+		
+	}    
     
 }

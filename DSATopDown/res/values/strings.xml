@@ -5,4 +5,12 @@
     <string name="action_settings">Settings</string>
     <string name="hello_world">Hello world!</string>
 
+    <!-- Button in conversation screen for sending the SMS message currently being composed (imperative verb) -->
+    <string name="send">Send</string>
+    <!-- Text to appear directly below the "Send" text on the SMS/MMS send button. The "MMS" text is on a second line in a smaller font. This is similar to saying "Send (mms)". -->
+    <string name="mms">MMS</string>
+    <!-- Content description for the send button when sending an mms (imperative verb) -->
+    <string name="send_mms">Send MMS</string>
+    <!-- Hint text in message body field when keyboard is exposed -->
+    <string name="type_to_compose_text_enter_to_send">Type message</string>        
 </resources>

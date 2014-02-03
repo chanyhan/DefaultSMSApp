@@ -3,20 +3,103 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ComposeMessage" >
+    android:orientation="vertical"
+    tools:context=".ComposeMessage" 
+    >
 <!-- 
     android:paddingBottom="@dimen/activity_vertical_margin"
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
  -->
-<ListView
-    android:id="@+id/listview" 
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:gravity="bottom"
-    android:layout_weight="1"
-    />
+	<ListView
+	    android:id="@+id/listview" 
+	    android:layout_width="match_parent"
+	    android:layout_height="match_parent"
+	    android:gravity="bottom"
+	    android:layout_weight="1"
+	    />
     
+
+
+	<LinearLayout
+	    android:id="@+id/bottom_panel"
+	    android:orientation="horizontal"
+	    android:layout_width="match_parent"
+	    android:layout_height="wrap_content"
+	    android:background="#fff" >
+	
+	    <EditText
+	        android:textColor="@android:color/black"
+	        android:id="@+id/embedded_text_editor"
+	        android:layout_width="0dip"
+	        android:layout_gravity="bottom"
+	        android:layout_height="wrap_content"
+	        android:layout_weight="1.0"
+	        android:layout_marginLeft="8dip"
+	        android:autoText="true"
+	        android:textSize="16sp"
+	        android:capitalize="sentences"
+	        android:nextFocusRight="@+id/send_button"
+	        android:hint="@string/type_to_compose_text_enter_to_send"
+	        android:minHeight="@dimen/input_text_height"
+	        android:maxLines="3"
+	        android:inputType="textShortMessage|textAutoCorrect|textCapSentences|textMultiLine"
+	        android:imeOptions="actionSend|flagNoEnterAction"
+	        android:maxLength="2000"
+	    />
+	
+	    <LinearLayout
+	        android:id="@+id/button_with_counter"
+	        android:orientation="vertical"
+	        android:layout_gravity="bottom"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content" >
+	
+	        <TextView
+	            android:id="@+id/text_counter"
+	            android:layout_width="match_parent"
+	            android:layout_height="wrap_content"
+	            android:gravity="center_horizontal|bottom"
+	            android:textColor="#cc333333"
+	            android:textSize="12sp"
+	            android:textStyle="bold"
+	            android:paddingLeft="3dip"
+	            android:paddingRight="3dip"
+	            android:paddingBottom="5dip"
+	            android:visibility="gone"
+	        />
+	
+	        <TextView
+	            android:id="@+id/send_button_mms"
+	            style="?android:attr/borderlessButtonStyle"
+	            android:drawableBottom="@drawable/send_button_selector"
+	            android:drawablePadding="0dip"
+	            android:layout_width="wrap_content"
+	            android:textSize="11sp"
+	            android:layout_height="0dip"
+	            android:layout_weight="1.0"
+	            android:layout_marginTop="0dip"
+	            android:layout_marginLeft="4dip"
+	            android:editable="false"
+	            android:text="@string/mms"
+	            android:contentDescription="@string/send_mms"
+	            android:nextFocusLeft="@+id/embedded_text_editor" 
+	            android:visibility="gone"/>
+	
+	        <ImageButton
+	            android:id="@+id/send_button_sms"
+	            style="?android:attr/borderlessButtonStyle"
+	            android:src="@drawable/send_button_selector"
+	            android:drawablePadding="0dip"
+	            android:layout_width="wrap_content"
+	            android:layout_height="0dip"
+	            android:layout_weight="1.0"
+	            android:layout_marginLeft="4dip"
+	            android:contentDescription="@string/send"
+	            android:nextFocusLeft="@+id/embedded_text_editor" />
+	
+	    </LinearLayout>
+	</LinearLayout>
 
 </LinearLayout>
