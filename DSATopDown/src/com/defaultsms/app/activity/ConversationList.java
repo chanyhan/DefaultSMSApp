@@ -46,6 +46,7 @@ import com.defaultsms.app.R;
 import com.defaultsms.app.R.id;
 import com.defaultsms.app.R.layout;
 import com.defaultsms.app.R.menu;
+import com.defaultsms.app.cache.ContactName;
 import com.defaultsms.app.mms.pdu.CharacterSets;
 import com.defaultsms.app.mms.pdu.EncodedStringValue;
 //import android.provider.;
@@ -71,6 +72,7 @@ public class ConversationList extends Activity {
 	
     private static Uri sAllCanonical = Uri.parse("content://mms-sms/canonical-addresses");
     private final Map<Long, String>mCache = new HashMap<Long, String>();
+    private final Map<String, String>mNameCache = new HashMap<String, String>();
 
     @Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -88,14 +90,15 @@ public class ConversationList extends Activity {
 		mListView=(ListView)findViewById(R.id.listview);
 		mAdapter=new SimpleCursorAdapter(this, R.layout.conversation_list_item,
 				mCursor,
-				new String[]{"date", "recipient_ids", "snippet"},
-				new int[]{R.id.date,  R.id.from, R.id.subject},
+				new String[]{"date", "snippet"},
+				new int[]{R.id.date,  R.id.subject},
 				SimpleCursorAdapter.FLAG_REGISTER_CONTENT_OBSERVER){
 			@Override
 			public View getView(int position, View convertView, ViewGroup parent){
 				View v=super.getView(position, convertView, parent);
 				Cursor c=getCursor();
 				c.moveToPosition(position);
+				// Date
 				long l=c.getLong(DATE);
 				SimpleDateFormat sdf = new SimpleDateFormat();//"yyyy.MM.dd"
 				Date date=new Date(l);
@@ -104,9 +107,36 @@ public class ConversationList extends Activity {
 				tv.setText(s);
 
 				tv=(TextView)v.findViewById(R.id.from);
-				l=c.getLong(RECIPIENT_IDS);
-				s=mCache.get(l);
-				tv.setText(s);
+				String recipient=c.getString(RECIPIENT_IDS);
+				String combinedRecipient="";
+				if(!TextUtils.isEmpty(recipient)){
+					String[] split=recipient.split(" ");
+					for(String str:split){
+						try{
+							long recipientId=Long.parseLong(str);
+							String tempNumber=mCache.get(recipientId);
+							String added="";
+							if(!TextUtils.isEmpty(combinedRecipient)){
+								combinedRecipient+=",";
+							}
+							
+							if(mNameCache.containsKey(tempNumber)){
+								added=mNameCache.get(tempNumber);
+							}else{
+								String name=ContactName.loadNameFromNumber(mContext, tempNumber);
+								if(!TextUtils.isEmpty(name)){
+									mNameCache.put(tempNumber, name);
+									added=name;
+								}
+							}
+							
+							combinedRecipient+=added;
+						}catch(Exception e){
+							
+						}
+					}
+				}
+				tv.setText(combinedRecipient);
 				
 				Drawable d=getResources().getDrawable(R.drawable.ic_contact_picture);
 				QuickContactBadge qcb=(QuickContactBadge)v.findViewById(R.id.avatar);
@@ -160,7 +190,14 @@ public class ConversationList extends Activity {
 //		startActivity(intent);
 		
 	}
-    
+    @Override
+    public void onDestroy(){
+    	super.onDestroy();
+    	if(mCursor!=null){
+    		mCursor.close();
+    	}
+    	mCursor=null;
+    }
     public static byte[] getBytes(String data) {
         try {
             return data.getBytes(CharacterSets.MIMENAME_ISO_8859_1);
@@ -216,6 +253,74 @@ public class ConversationList extends Activity {
     };    
     
     
+	
+	private void makeCanonicalAddr(){
+		Cursor c=getContentResolver().query(sAllCanonical, null, null, null, null);
+		if(c!=null && c.getCount()>0){
+			c.moveToFirst();
+	       try {
+                while (c.moveToNext()) {
+                    // TODO: don't hardcode the column indices
+                    long id = c.getLong(0);
+                    String number = c.getString(1);
+                    mCache.put(id, number);
+                }
+	        } finally {
+	            c.close();
+	        }			
+		}
+	}
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		// Inflate the menu; this adds items to the action bar if it is present.
+		getMenuInflater().inflate(R.menu.main, menu);
+		return true;
+	}
+
+	
+	
+	
+	/**
+	 * for debug
+	 * @param c
+	 */
+	private void forDebugging(Cursor c){
+		for(int i=0;i<c.getCount();i++){
+			c.moveToPosition(i);
+			String print="";
+			for(String  t:PRJ_SIMPLE){
+				int columnIndex=c.getColumnIndex(t);
+				int type=c.getType(columnIndex);
+				switch(type){
+				case Cursor.FIELD_TYPE_INTEGER:
+					print+=c.getInt(columnIndex);
+					break;
+				case Cursor.FIELD_TYPE_STRING:
+					String temp=c.getString(columnIndex);
+					if(t.equals("body")){
+						if(temp.length()>20){
+							temp=temp.substring(0, 20);
+						}
+					}
+					print+=temp;
+					break;
+				case Cursor.FIELD_TYPE_FLOAT:
+					print+=c.getFloat(columnIndex);
+					break;
+				default:
+					print+="null";
+					break;
+				}
+				print+=",";
+			}
+			LogUtil.v("Cursor Pos="+i+", content="+print);
+			
+		}
+		LogUtil.d("Telephony.MmsSms.CONTENT_CONVERSATIONS_URI:"+c.getCount());
+		LogUtil.d("Projection:"+c.getColumnNames().toString());		
+	}
+	
 	private void justTest(){
 		Uri uri=Uri.parse("content://mms-sms/complete-conversations");//ContentUris.withAppendedId(Threads.CONTENT_URI, 0);
 		LogUtil.d("uri= "+uri.toString());
@@ -256,64 +361,5 @@ public class ConversationList extends Activity {
 			}
 			LogUtil.d(print);
 		}
-	}
-	private void makeCanonicalAddr(){
-		Cursor c=getContentResolver().query(sAllCanonical, null, null, null, null);
-		if(c!=null && c.getCount()>0){
-			c.moveToFirst();
-	       try {
-                while (c.moveToNext()) {
-                    // TODO: don't hardcode the column indices
-                    long id = c.getLong(0);
-                    String number = c.getString(1);
-                    mCache.put(id, number);
-                }
-	        } finally {
-	            c.close();
-	        }			
-		}
-	}
-
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		// Inflate the menu; this adds items to the action bar if it is present.
-		getMenuInflater().inflate(R.menu.main, menu);
-		return true;
-	}
-
-	private void forDebugging(Cursor c){
-		for(int i=0;i<c.getCount();i++){
-			c.moveToPosition(i);
-			String print="";
-			for(String  t:PRJ_SIMPLE){
-				int columnIndex=c.getColumnIndex(t);
-				int type=c.getType(columnIndex);
-				switch(type){
-				case Cursor.FIELD_TYPE_INTEGER:
-					print+=c.getInt(columnIndex);
-					break;
-				case Cursor.FIELD_TYPE_STRING:
-					String temp=c.getString(columnIndex);
-					if(t.equals("body")){
-						if(temp.length()>20){
-							temp=temp.substring(0, 20);
-						}
-					}
-					print+=temp;
-					break;
-				case Cursor.FIELD_TYPE_FLOAT:
-					print+=c.getFloat(columnIndex);
-					break;
-				default:
-					print+="null";
-					break;
-				}
-				print+=",";
-			}
-			LogUtil.v("Cursor Pos="+i+", content="+print);
-			
-		}
-		LogUtil.d("Telephony.MmsSms.CONTENT_CONVERSATIONS_URI:"+c.getCount());
-		LogUtil.d("Projection:"+c.getColumnNames().toString());		
-	}
+	}	
 }

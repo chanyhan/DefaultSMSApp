@@ -211,8 +211,12 @@ public class ComposeMessage extends Activity implements OnClickListener{
         
         // Update with name
         title=loadNameFromNumber(mNumber);
-        
-        subTitle=mCursor.getString(COLUMN_SMS_ADDRESS);
+        if(TextUtils.isEmpty(title)){
+        	title=mNumber;
+        }
+        if(title!=null && !title.equals(mNumber)){
+        	subTitle=mNumber;
+        }
 
         ActionBar actionBar = getActionBar();
         actionBar.setTitle(title);
@@ -232,14 +236,14 @@ public class ComposeMessage extends Activity implements OnClickListener{
         Phone.NORMALIZED_NUMBER,        // 7
         //Contacts.SEND_TO_VOICEMAIL      // 8
     };
-    private static final int PHONE_ID_COLUMN = 0;
-    private static final int PHONE_NUMBER_COLUMN = 1;
-    private static final int PHONE_LABEL_COLUMN = 2;
+    //private static final int PHONE_ID_COLUMN = 0;
+    //private static final int PHONE_NUMBER_COLUMN = 1;
+    //private static final int PHONE_LABEL_COLUMN = 2;
     private static final int CONTACT_NAME_COLUMN = 3;
-    private static final int CONTACT_ID_COLUMN = 4;
-    private static final int CONTACT_PRESENCE_COLUMN = 5;
-    private static final int CONTACT_STATUS_COLUMN = 6;
-    private static final int PHONE_NORMALIZED_NUMBER = 7;
+    //private static final int CONTACT_ID_COLUMN = 4;
+    //private static final int CONTACT_PRESENCE_COLUMN = 5;
+    //private static final int CONTACT_STATUS_COLUMN = 6;
+    //private static final int PHONE_NORMALIZED_NUMBER = 7;
     //private static final int SEND_TO_VOICEMAIL = 8;    
     
     private static final String CALLER_ID_SELECTION_WITHOUT_E164 =  " Data._ID IN "
@@ -272,7 +276,7 @@ public class ComposeMessage extends Activity implements OnClickListener{
             	return cursor.getString(CONTACT_NAME_COLUMN);
             }
         }
-        return "";
+        return number;
     }
     
     public static String normalizeNumber(String phoneNumber) {
