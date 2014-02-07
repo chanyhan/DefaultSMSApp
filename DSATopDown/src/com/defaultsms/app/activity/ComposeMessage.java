@@ -1,9 +1,12 @@
 package com.defaultsms.app.activity;
 
+import java.io.UnsupportedEncodingException;
 import java.util.Locale;
 
 import com.defaultsms.app.LogUtil;
 import com.defaultsms.app.R;
+import com.defaultsms.app.mms.pdu.CharacterSets;
+import com.defaultsms.app.mms.pdu.EncodedStringValue;
 
 import android.app.ActionBar;
 import android.app.Activity;
@@ -155,8 +158,16 @@ public class ComposeMessage extends Activity implements OnClickListener{
     				right.setVisibility(View.GONE);
     				break;
     			case INCOMING_ITEM_TYPE_MMS:
-    				tv.setText(c.getString(COLUMN_MMS_TEXT_ONLY));
+    				tv.setText(extractEncStrFromCursor(c, COLUMN_MMS_SUBJECT, COLUMN_MMS_SUBJECT_CHARSET));
     				tv.setGravity(Gravity.LEFT);
+    				Cursor temp=getContentResolver().query(Uri.parse("content://mms/"+c.getInt(COLUMN_ID)+"/part"), null, "ct=\'text/plain\'", null, null);
+    				if(temp!=null && temp.getCount()>0){
+    					temp.moveToFirst();
+    					String text=temp.getString(temp.getColumnIndex("text"));
+    					tv.setText(tv.getText()+"\n"+text);
+    					temp.close();
+    				}
+    				
     				left.setVisibility(View.VISIBLE);
     				right.setVisibility(View.GONE);
     				break;
@@ -167,7 +178,8 @@ public class ComposeMessage extends Activity implements OnClickListener{
     				right.setVisibility(View.VISIBLE);    				
     				break;
     			case OUTGOING_ITEM_TYPE_MMS:
-    				tv.setText(c.getString(COLUMN_MMS_TEXT_ONLY));
+    				//String sub=extractEncStrFromCursor(c, COLUMN_MMS_SUBJECT, COLUMN_MMS_SUBJECT_CHARSET);
+    				tv.setText(extractEncStrFromCursor(c, COLUMN_MMS_SUBJECT, COLUMN_MMS_SUBJECT_CHARSET));
     				tv.setGravity(Gravity.RIGHT);
     				left.setVisibility(View.GONE);
     				right.setVisibility(View.VISIBLE);
@@ -199,7 +211,14 @@ public class ComposeMessage extends Activity implements OnClickListener{
     	updateTitle();
     }
    
-    
+    @Override
+    public void onDestroy(){
+    	super.onDestroy();
+    	if(mCursor!=null){
+    		mCursor.close();
+    	}
+    	mCursor=null;
+    }
     private void updateTitle() {
         String title = null;
         String subTitle = null;
@@ -260,8 +279,6 @@ public class ComposeMessage extends Activity implements OnClickListener{
     	if(TextUtils.isEmpty(number)){
     		return "";
     	}
-
-    	
         String normalizedNumber = normalizeNumber(number);
         String minMatch = PhoneNumberUtils.toCallerIDMinMatch(normalizedNumber);
         if (!TextUtils.isEmpty(normalizedNumber) && !TextUtils.isEmpty(minMatch)) {
@@ -273,7 +290,9 @@ public class ComposeMessage extends Activity implements OnClickListener{
             Cursor cursor = getContentResolver().query(Data.CONTENT_URI, CALLER_ID_PROJECTION, selection, args, null);
             if(cursor!=null && cursor.getCount()>0){
             	cursor.moveToFirst();
-            	return cursor.getString(CONTACT_NAME_COLUMN);
+            	String name= cursor.getString(CONTACT_NAME_COLUMN);
+            	cursor.close();
+            	return name;
             }
         }
         return number;
@@ -296,6 +315,27 @@ public class ComposeMessage extends Activity implements OnClickListener{
         }
         return sb.toString();
     }
+    
+    public static byte[] getBytes(String data) {
+        try {
+            return data.getBytes(CharacterSets.MIMENAME_ISO_8859_1);
+        } catch (UnsupportedEncodingException e) {
+            // Impossible to reach here!
+            return new byte[0];
+        }
+    }
+    
+    public static String extractEncStrFromCursor(Cursor cursor,  int columnRawBytes, int columnCharset) {
+        String rawBytes = cursor.getString(columnRawBytes);
+        int charset = cursor.getInt(columnCharset);
+        if (TextUtils.isEmpty(rawBytes)) {
+            return "";
+        } else if (charset == CharacterSets.ANY_CHARSET) {
+            return rawBytes;
+        } else {
+            return new EncodedStringValue(charset, getBytes(rawBytes)).getString();
+        }
+    }     
     
 	@Override
 	public void onClick(View v) {
