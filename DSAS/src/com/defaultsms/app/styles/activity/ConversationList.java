@@ -82,6 +82,7 @@ public class ConversationList extends Activity {
 		uri=uri.buildUpon().appendQueryParameter("simple", "true").build();
 		mCursor=getContentResolver().query(uri, null, null, null, "date DESC");
 
+		getActionBar().setBackgroundDrawable(getResources().getDrawable(R.drawable.bg_title));
 		forDebugging(mCursor);
 		
 		mListView=(ListView)findViewById(R.id.listview);
@@ -142,6 +143,7 @@ public class ConversationList extends Activity {
 				
 				long read=c.getLong(READ);
 				
+				/*
 				int backgroundId;
 				if(read==0){
 					backgroundId = R.drawable.conversation_item_background_unread;
@@ -149,6 +151,7 @@ public class ConversationList extends Activity {
 					backgroundId = R.drawable.conversation_item_background_read;
 				}
 				v.setBackgroundResource(backgroundId);
+				*/
 				v.setTag(c.getLong(_ID));
 				
 				s=extractEncStrFromCursor(c,SNIPPET, SNIPPET_CS);
