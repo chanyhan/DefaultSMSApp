@@ -82,7 +82,6 @@ public class ConversationList extends Activity {
 		uri=uri.buildUpon().appendQueryParameter("simple", "true").build();
 		mCursor=getContentResolver().query(uri, null, null, null, "date DESC");
 
-		getActionBar().setBackgroundDrawable(getResources().getDrawable(R.drawable.bg_title));
 		forDebugging(mCursor);
 		
 		mListView=(ListView)findViewById(R.id.listview);

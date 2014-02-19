@@ -97,7 +97,8 @@
 	            android:layout_weight="1.0"
 	            android:layout_marginLeft="4dip"
 	            android:contentDescription="@string/send"
-	            android:nextFocusLeft="@+id/embedded_text_editor" />
+	            android:nextFocusLeft="@+id/embedded_text_editor" 
+	            android:onClick="onClick"/>
 	
 	    </LinearLayout>
 	</LinearLayout>

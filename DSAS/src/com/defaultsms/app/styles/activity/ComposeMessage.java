@@ -10,6 +10,8 @@ import com.defaultsms.app.styles.mms.pdu.EncodedStringValue;
 
 import android.app.ActionBar;
 import android.app.Activity;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -27,10 +29,12 @@ import android.provider.Telephony.Sms.Conversations;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.telephony.PhoneNumberUtils;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -208,6 +212,10 @@ public class ComposeMessage extends Activity implements OnClickListener{
     	};
     	
     	mListView.setAdapter(mAdapter);
+    	if(mCursor!=null){
+    		mListView.setSelection(mCursor.getCount()-1);
+
+    	}
     	updateTitle();
     }
    
@@ -340,7 +348,47 @@ public class ComposeMessage extends Activity implements OnClickListener{
 	@Override
 	public void onClick(View v) {
 		// TODO Auto-generated method stub
-		
+		switch(v.getId()){
+		case R.id.send_button_sms:
+			sendMessage();
+			break;
+		}
 	}    
-    
+	
+	private void sendMessage(){
+		EditText et=(EditText)findViewById(R.id.embedded_text_editor);
+        Uri uri=addMessageToUri(
+        		getContentResolver(),
+                Uri.parse("content://sms/queued"),
+                mNumber,
+                et.getText().toString(),
+                null, 
+                System.currentTimeMillis(),
+                true /* read */,
+                false,
+                mThreadId);
+        
+        LogUtil.d(uri.toString());
+        et.setText("");
+	}
+    public static Uri addMessageToUri(ContentResolver resolver,
+            Uri uri, String address, String body, String subject,
+            Long date, boolean read, boolean deliveryReport, long threadId) {
+        ContentValues values = new ContentValues(7);
+
+        values.put(Sms.ADDRESS, address);
+        if (date != null) {
+            values.put(Sms.DATE, date);
+        }
+        values.put(Sms.READ, read ? Integer.valueOf(1) : Integer.valueOf(0));
+        values.put(Sms.SUBJECT, subject);
+        values.put(Sms.BODY, body);
+        if (deliveryReport) {
+            values.put(Sms.STATUS, Sms.STATUS_PENDING);
+        }
+        if (threadId != -1L) {
+            values.put(Sms.THREAD_ID, threadId);
+        }
+        return resolver.insert(uri, values);
+    }    
 }
