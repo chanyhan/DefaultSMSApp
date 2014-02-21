@@ -16,9 +16,11 @@ import android.app.PendingIntent;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.BaseColumns;
 import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
@@ -117,6 +119,25 @@ public class ComposeMessage extends Activity implements OnClickListener{
     Cursor mCursor=null;
     ListView	mListView;
     SimpleCursorAdapter mAdapter;
+    Uri		mUri;
+    
+    ContentObserver mObserver=new ContentObserver(new Handler()){
+        public void onChange(boolean selfChange) {
+        	if(mUri==null){
+        		return;
+        	}
+        	if(mCursor!=null){
+        		mCursor.close();
+        	}
+        	
+        	mCursor=getContentResolver().query(mUri, PROJECTION, null, null, null);
+        	if(mCursor!=null){
+        		mListView.setSelection(mCursor.getCount()-1);
+        		mAdapter.swapCursor(mCursor);
+        	}
+        	
+        }    	
+    };
     @Override
 	protected void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
@@ -126,18 +147,19 @@ public class ComposeMessage extends Activity implements OnClickListener{
     	if(mNumber!=null){
     		LogUtil.d("Number="+mNumber);
     	}
-    	Uri uri=getIntent().getData();
-    	if(uri!=null){
+    	mUri=getIntent().getData();
+    	if(mUri!=null){
     		// show previous conversation
-    		mCursor=getContentResolver().query(uri, PROJECTION, null, null, null);
+    		mCursor=getContentResolver().query(mUri, PROJECTION, null, null, null);
     		if(mCursor!=null){
     			try{
-    			mThreadId=Long.parseLong(uri.getLastPathSegment());
+    			mThreadId=Long.parseLong(mUri.getLastPathSegment());
     			}catch(Exception e){
     				e.printStackTrace();
     			}
     			LogUtil.d("ThreadId="+mThreadId+", mCursor="+mCursor.getCount());
     		}
+    		getContentResolver().registerContentObserver(mUri, true, mObserver);    		
     	}else{
     		//create new
     	}
@@ -223,6 +245,7 @@ public class ComposeMessage extends Activity implements OnClickListener{
 
     	}
     	updateTitle();
+    	
     }
    
     @Override
@@ -232,6 +255,8 @@ public class ComposeMessage extends Activity implements OnClickListener{
     		mCursor.close();
     	}
     	mCursor=null;
+    	
+    	getContentResolver().unregisterContentObserver(mObserver);
     }
     private void updateTitle() {
         String title = null;
@@ -365,10 +390,10 @@ public class ComposeMessage extends Activity implements OnClickListener{
 		EditText et=(EditText)findViewById(R.id.embedded_text_editor);
 		String message=et.getText().toString();
 		String phoneNumber=PhoneNumberUtils.formatNumber(mNumber);
-        PendingIntent pi = PendingIntent.getActivity(this, 0,
-                new Intent(this, null), 0);                
-            SmsManager sms = SmsManager.getDefault();
-            sms.sendTextMessage(phoneNumber, null, message, pi, null);   
+//        PendingIntent pi = PendingIntent.getActivity(this, 0,
+//                new Intent(this, null), 0);                
+        SmsManager sms = SmsManager.getDefault();
+        sms.sendTextMessage(phoneNumber, null, message, null, null);   
             
 		/*
 		Intent intent =new Intent(TelephonyManager.ACTION_RESPOND_VIA_MESSAGE);
