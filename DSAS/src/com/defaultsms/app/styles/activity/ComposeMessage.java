@@ -5,13 +5,17 @@ import java.util.Locale;
 
 import com.defaultsms.app.styles.R;
 import com.defaultsms.app.styles.LogUtil;
+import com.defaultsms.app.styles.SmsReceiver;
 import com.defaultsms.app.styles.mms.pdu.CharacterSets;
 import com.defaultsms.app.styles.mms.pdu.EncodedStringValue;
+import com.defaultsms.app.styles.mms.transaction.SmsReceiverService;
 
 import android.app.ActionBar;
 import android.app.Activity;
+import android.app.PendingIntent;
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -28,6 +32,8 @@ import android.provider.Telephony.MmsSms.PendingMessages;
 import android.provider.Telephony.Sms.Conversations;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.telephony.PhoneNumberUtils;
+import android.telephony.SmsManager;
+import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Gravity;
@@ -357,6 +363,20 @@ public class ComposeMessage extends Activity implements OnClickListener{
 	
 	private void sendMessage(){
 		EditText et=(EditText)findViewById(R.id.embedded_text_editor);
+		String message=et.getText().toString();
+		String phoneNumber=PhoneNumberUtils.formatNumber(mNumber);
+        PendingIntent pi = PendingIntent.getActivity(this, 0,
+                new Intent(this, null), 0);                
+            SmsManager sms = SmsManager.getDefault();
+            sms.sendTextMessage(phoneNumber, null, message, pi, null);   
+            
+		/*
+		Intent intent =new Intent(TelephonyManager.ACTION_RESPOND_VIA_MESSAGE);
+		intent.putExtra(Intent.EXTRA_TEXT, et.getText().toString());
+		intent.setData(Uri.parse("sms://"+number));
+		intent.addCategory(Intent.CATEGORY_DEFAULT);
+		startService(intent);
+		/*
         Uri uri=addMessageToUri(
         		getContentResolver(),
                 Uri.parse("content://sms/queued"),
@@ -364,11 +384,15 @@ public class ComposeMessage extends Activity implements OnClickListener{
                 et.getText().toString(),
                 null, 
                 System.currentTimeMillis(),
-                true /* read */,
+                true,//read
                 false,
                 mThreadId);
-        
+        sendBroadcast(new Intent(SmsReceiverService.ACTION_SEND_MESSAGE,
+                null,
+                this,
+                SmsReceiver.class));        
         LogUtil.d(uri.toString());
+        */
         et.setText("");
 	}
     public static Uri addMessageToUri(ContentResolver resolver,
