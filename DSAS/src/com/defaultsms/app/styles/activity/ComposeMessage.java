@@ -45,6 +45,7 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class ComposeMessage extends Activity implements OnClickListener{
 
@@ -178,6 +179,8 @@ public class ComposeMessage extends Activity implements OnClickListener{
     			c.moveToPosition(position);
     			int type=getItemViewType(c);
     			
+    			View bg=v.findViewById(R.id.message_block);
+    			
     			TextView tv=(TextView)v.findViewById(R.id.text_view);
     			View left=v.findViewById(R.id.avatar_left);
     			View right=v.findViewById(R.id.avatar_right);
@@ -186,8 +189,10 @@ public class ComposeMessage extends Activity implements OnClickListener{
     			case INCOMING_ITEM_TYPE_SMS:
     				tv.setText(c.getString(COLUMN_SMS_BODY));
     				tv.setGravity(Gravity.LEFT);
-    				left.setVisibility(View.VISIBLE);
-    				right.setVisibility(View.GONE);
+    				
+    				bg.setBackgroundResource(R.drawable.message_bubble_in);
+    				//left.setVisibility(View.VISIBLE);
+    				//right.setVisibility(View.GONE);
     				break;
     			case INCOMING_ITEM_TYPE_MMS:
     				tv.setText(extractEncStrFromCursor(c, COLUMN_MMS_SUBJECT, COLUMN_MMS_SUBJECT_CHARSET));
@@ -199,22 +204,24 @@ public class ComposeMessage extends Activity implements OnClickListener{
     					tv.setText(tv.getText()+"\n"+text);
     					temp.close();
     				}
-    				
-    				left.setVisibility(View.VISIBLE);
-    				right.setVisibility(View.GONE);
+    				bg.setBackgroundResource(R.drawable.message_bubble_in);
+    				//left.setVisibility(View.VISIBLE);
+    				//right.setVisibility(View.GONE);
     				break;
     			case OUTGOING_ITEM_TYPE_SMS:
     				tv.setText(c.getString(COLUMN_SMS_BODY));
     				tv.setGravity(Gravity.RIGHT);
-    				left.setVisibility(View.GONE);
-    				right.setVisibility(View.VISIBLE);    				
+    				bg.setBackgroundResource(R.drawable.message_bubble_out);
+    				//left.setVisibility(View.GONE);
+    				//right.setVisibility(View.VISIBLE);		
     				break;
     			case OUTGOING_ITEM_TYPE_MMS:
     				//String sub=extractEncStrFromCursor(c, COLUMN_MMS_SUBJECT, COLUMN_MMS_SUBJECT_CHARSET);
     				tv.setText(extractEncStrFromCursor(c, COLUMN_MMS_SUBJECT, COLUMN_MMS_SUBJECT_CHARSET));
     				tv.setGravity(Gravity.RIGHT);
-    				left.setVisibility(View.GONE);
-    				right.setVisibility(View.VISIBLE);
+    				bg.setBackgroundResource(R.drawable.message_bubble_out);
+    				//left.setVisibility(View.GONE);
+    				//right.setVisibility(View.VISIBLE);
     				break;
     			}
     			
@@ -389,6 +396,9 @@ public class ComposeMessage extends Activity implements OnClickListener{
 	private void sendMessage(){
 		EditText et=(EditText)findViewById(R.id.embedded_text_editor);
 		String message=et.getText().toString();
+		if(TextUtils.isEmpty(message)){
+			return;
+		}
 		String phoneNumber=PhoneNumberUtils.formatNumber(mNumber);
 //        PendingIntent pi = PendingIntent.getActivity(this, 0,
 //                new Intent(this, null), 0);                
