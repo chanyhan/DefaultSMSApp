@@ -13,6 +13,7 @@ import android.text.TextUtils;
 public class ContactName{
 	
 	private final Map<String, String>mCache = new HashMap<String, String>();
+	private final Map<String, String>mUriCache = new HashMap<String, String>();
 	
 	public String getNameFromNumber(Context con, String number){
 		if(con==null){
@@ -89,6 +90,35 @@ public class ContactName{
         }
         return number;
     }
+    
+    public static String[] getUriFromNumber(Context c, String number) {
+    	if(TextUtils.isEmpty(number)){
+    		return null;
+    	}
+
+    	
+        String normalizedNumber = normalizeNumber(number);
+        String minMatch = PhoneNumberUtils.toCallerIDMinMatch(normalizedNumber);
+        if (!TextUtils.isEmpty(normalizedNumber) && !TextUtils.isEmpty(minMatch)) {
+            String numberLen = String.valueOf(normalizedNumber.length());
+            String selection;
+            String[] args;
+            selection = CALLER_ID_SELECTION_WITHOUT_E164;
+            args = new String[] {minMatch, numberLen, normalizedNumber, numberLen};
+            Cursor cursor = c.getContentResolver().query(Data.CONTENT_URI, new String[]{Data._ID, Data.LOOKUP_KEY, Data.PHOTO_URI,}, selection, args, null);
+            if(cursor!=null && cursor.getCount()>0){
+            	cursor.moveToFirst();
+            	String[] s=new String[]{
+            		""+cursor.getLong(0),
+            		cursor.getString(1),
+            		cursor.getString(2),
+            	};
+            	cursor.close();
+            	return s;
+            }
+        }
+        return null;
+    }    
     
     public static String normalizeNumber(String phoneNumber) {
         StringBuilder sb = new StringBuilder();

@@ -14,6 +14,7 @@ import com.androidquery.util.AQUtility;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.BaseColumns;
+import android.provider.ContactsContract.Contacts;
 import android.provider.Telephony;
 import android.provider.Telephony.Mms;
 import android.provider.Telephony.MmsSms;
@@ -28,6 +29,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.database.MatrixCursor;
 import android.database.MatrixCursor.RowBuilder;
+import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.text.TextUtils;
@@ -46,6 +48,9 @@ import com.defaultsms.app.styles.LogUtil;
 import com.defaultsms.app.styles.cache.ContactName;
 import com.defaultsms.app.styles.mms.pdu.CharacterSets;
 import com.defaultsms.app.styles.mms.pdu.EncodedStringValue;
+
+import android.content.res.AssetFileDescriptor;
+
 //import android.provider.;
 public class ConversationList extends Activity {
 
@@ -95,6 +100,12 @@ public class ConversationList extends Activity {
 				View v=super.getView(position, convertView, parent);
 				Cursor c=getCursor();
 				c.moveToPosition(position);
+				
+				Drawable d=getResources().getDrawable(R.drawable.list_badge);
+				QuickContactBadge qcb=(QuickContactBadge)v.findViewById(R.id.avatar);
+				qcb.setVisibility(View.VISIBLE);
+				qcb.setImageDrawable(d);
+				
 				// Date
 				long l=c.getLong(DATE);
 				SimpleDateFormat sdf = new SimpleDateFormat();//"yyyy.MM.dd"
@@ -125,6 +136,47 @@ public class ConversationList extends Activity {
 									mNameCache.put(tempNumber, name);
 									added=name;
 								}
+								String[] t=ContactName.getUriFromNumber(mContext, tempNumber);
+								if(t!=null){
+									Uri uri=Contacts.getLookupUri(
+							                Long.parseLong(t[0]),
+							                t[1]
+							            );									
+									qcb.assignContactUri(uri);
+									
+									AssetFileDescriptor afd=null;
+									try{
+									afd= getContentResolver().openAssetFileDescriptor(Uri.parse(t[2]), "r");
+							                
+							        /*
+							         * Gets a file descriptor from the asset file descriptor.
+							         * This object can be used across processes.
+							         */
+							        java.io.FileDescriptor fileDescriptor = afd.getFileDescriptor();
+							        // Decode the photo file and return the result as a Bitmap
+							        // If the file descriptor is valid
+							        if (fileDescriptor != null) {
+							            // Decodes the bitmap
+							        	Bitmap b=android.graphics.BitmapFactory.decodeFileDescriptor(
+							                    fileDescriptor, null, null);
+							        	qcb.setImageBitmap(b);
+							            }
+							        // If the file isn't found
+							        } catch (java.io.FileNotFoundException e) {
+							            /*
+							             * Handle file not found errors
+							             */
+							        }finally {
+							            if (afd != null) {
+							                try {
+							                    afd.close();
+							                } catch (java.io.IOException e) {}
+							            }
+							        }									
+									
+									
+									
+								}
 							}
 							
 							combinedRecipient+=added;
@@ -135,10 +187,7 @@ public class ConversationList extends Activity {
 				}
 				tv.setText(combinedRecipient);
 				
-				Drawable d=getResources().getDrawable(R.drawable.ic_contact_picture);
-				QuickContactBadge qcb=(QuickContactBadge)v.findViewById(R.id.avatar);
-				qcb.setVisibility(View.VISIBLE);
-				qcb.setImageDrawable(d);
+
 				
 				long read=c.getLong(READ);
 				
