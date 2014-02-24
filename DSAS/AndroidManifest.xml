@@ -53,6 +53,7 @@
         </receiver>
         <activity
             android:name="com.defaultsms.app.styles.activity.ComposeMessage"
+            android:parentActivityName="com.defaultsms.app.styles.activity.ConversationList"
             android:permission="android.permission.SEND_RESPOND_VIA_MESSAGE"
             android:label="@string/app_name" >
             <intent-filter>

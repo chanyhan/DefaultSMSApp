@@ -39,6 +39,7 @@ import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
@@ -133,8 +134,9 @@ public class ComposeMessage extends Activity implements OnClickListener{
         	
         	mCursor=getContentResolver().query(mUri, PROJECTION, null, null, null);
         	if(mCursor!=null){
-        		mListView.setSelection(mCursor.getCount()-1);
         		mAdapter.swapCursor(mCursor);
+        		mAdapter.notifyDataSetChanged();
+        		mListView.setSelection(mCursor.getCount()-1);
         	}
         	
         }    	
@@ -265,6 +267,18 @@ public class ComposeMessage extends Activity implements OnClickListener{
     	
     	getContentResolver().unregisterContentObserver(mObserver);
     }
+    /*
+    @Override
+    public boolean onMenuItemSelected(int pos, MenuItem menu){
+    	super.onMenuItemSelected(pos, menu);
+    	switch(pos){
+    	case android.R.id.home:
+    		finish();
+    		break;
+    	}
+    	return true;
+    }
+    */
     private void updateTitle() {
         String title = null;
         String subTitle = null;

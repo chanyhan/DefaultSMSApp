@@ -147,25 +147,13 @@ public class ConversationList extends Activity {
 									AssetFileDescriptor afd=null;
 									try{
 									afd= getContentResolver().openAssetFileDescriptor(Uri.parse(t[2]), "r");
-							                
-							        /*
-							         * Gets a file descriptor from the asset file descriptor.
-							         * This object can be used across processes.
-							         */
 							        java.io.FileDescriptor fileDescriptor = afd.getFileDescriptor();
-							        // Decode the photo file and return the result as a Bitmap
-							        // If the file descriptor is valid
 							        if (fileDescriptor != null) {
 							            // Decodes the bitmap
-							        	Bitmap b=android.graphics.BitmapFactory.decodeFileDescriptor(
-							                    fileDescriptor, null, null);
+							        	Bitmap b=android.graphics.BitmapFactory.decodeFileDescriptor(fileDescriptor, null, null);
 							        	qcb.setImageBitmap(b);
 							            }
-							        // If the file isn't found
 							        } catch (java.io.FileNotFoundException e) {
-							            /*
-							             * Handle file not found errors
-							             */
 							        }finally {
 							            if (afd != null) {
 							                try {
@@ -173,9 +161,6 @@ public class ConversationList extends Activity {
 							                } catch (java.io.IOException e) {}
 							            }
 							        }									
-									
-									
-									
 								}
 							}
 							
@@ -408,6 +393,9 @@ public class ConversationList extends Activity {
 				print+=o;
 			}
 			LogUtil.d(print);
+		}
+		if(c!=null){
+			c.close();
 		}
 	}	
 }

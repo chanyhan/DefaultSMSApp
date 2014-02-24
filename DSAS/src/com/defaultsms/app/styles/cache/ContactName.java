@@ -82,11 +82,17 @@ public class ContactName{
             selection = CALLER_ID_SELECTION_WITHOUT_E164;
             args = new String[] {minMatch, numberLen, normalizedNumber, numberLen};
             Cursor cursor = c.getContentResolver().query(Data.CONTENT_URI, CALLER_ID_PROJECTION, selection, args, null);
-            if(cursor!=null && cursor.getCount()>0){
-            	cursor.moveToFirst();
-            	number=cursor.getString(CONTACT_NAME_COLUMN);
-            	cursor.close();
+            try{
+                if(cursor!=null && cursor.getCount()>0){
+                	cursor.moveToFirst();
+                	number=cursor.getString(CONTACT_NAME_COLUMN);
+                }            	
+            }finally{
+            	if(cursor!=null){
+            		cursor.close();
+            	}
             }
+
         }
         return number;
     }
@@ -106,16 +112,22 @@ public class ContactName{
             selection = CALLER_ID_SELECTION_WITHOUT_E164;
             args = new String[] {minMatch, numberLen, normalizedNumber, numberLen};
             Cursor cursor = c.getContentResolver().query(Data.CONTENT_URI, new String[]{Data._ID, Data.LOOKUP_KEY, Data.PHOTO_URI,}, selection, args, null);
-            if(cursor!=null && cursor.getCount()>0){
-            	cursor.moveToFirst();
-            	String[] s=new String[]{
-            		""+cursor.getLong(0),
-            		cursor.getString(1),
-            		cursor.getString(2),
-            	};
-            	cursor.close();
-            	return s;
+            try{
+                if(cursor!=null && cursor.getCount()>0){
+                	cursor.moveToFirst();
+                	String[] s=new String[]{
+                		""+cursor.getLong(0),
+                		cursor.getString(1),
+                		cursor.getString(2),
+                	};
+                	return s;
+                }            	
+            }finally{
+            	if(cursor!=null){
+            		cursor.close();
+            	}
             }
+
         }
         return null;
     }    
